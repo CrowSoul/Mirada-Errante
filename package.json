@@ -1,0 +1,9 @@
+{
+  "name": "mirada-errante",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "init-firebase-config": "node scripts/create-firebase-config.js",
+    "protect-firebase-config": "node scripts/protect-firebase-config.js"
+  }
+}
