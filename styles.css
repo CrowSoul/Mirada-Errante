@@ -234,6 +234,26 @@ select {
   color: var(--text);
 }
 
+.btn-sm {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+}
+
+.btn-custom-post {
+  background: linear-gradient(135deg, #a78bfa, #d8b4fe);
+  color: #070712;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 1rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-custom-post:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(167, 139, 250, 0.3);
+}
+
 .hero-section {
   padding: 5rem 0 2rem;
 }

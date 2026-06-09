@@ -13,21 +13,30 @@ const defaultPosts = [
     title: 'Luz entre los libros',
     excerpt: 'Una breve exposición sobre el tránsito entre la lectura y la mirada errante.',
     tag: 'Literatura',
-    image: 'logo.svg'
+    image: 'logo.svg',
+    buttonEnabled: false,
+    buttonText: '',
+    buttonUrl: ''
   },
   {
     id: 'post-2',
     title: 'Arte que susurra',
     excerpt: 'Reflexiones sobre piezas artesanales que dialogan con la oscuridad elegante.',
     tag: 'Artesanía',
-    image: 'logo.svg'
+    image: 'logo.svg',
+    buttonEnabled: false,
+    buttonText: '',
+    buttonUrl: ''
   },
   {
     id: 'post-3',
     title: 'Navegando el silencio',
     excerpt: 'Un recorrido visual y literario que invita a explorar cada rincón de la exposición.',
     tag: 'Exposición',
-    image: 'logo.svg'
+    image: 'logo.svg',
+    buttonEnabled: false,
+    buttonText: '',
+    buttonUrl: ''
   }
 ];
 
@@ -177,6 +186,9 @@ function renderHome() {
     .map(post => {
       const count = comments.filter(comment => comment.postId === post.id).length;
       const imageUrl = post.image || 'logo.svg';
+      const buttonHTML = post.buttonEnabled && post.buttonText && post.buttonUrl
+        ? `<a href="${post.buttonUrl}" target="_blank" class="btn btn-custom-post">${post.buttonText}</a>`
+        : '';
       return `
         <article class="post-card hover-float">
           <img class="post-thumb zoomable-image" src="${imageUrl}" alt="Miniatura ${post.title}" data-title="${post.title}" data-caption="${post.excerpt}" data-post-id="${post.id}" />
@@ -185,6 +197,7 @@ function renderHome() {
           <p>${post.excerpt}</p>
           <p class="image-hint">Haz clic en la imagen para ver los comentarios y la descripción completa.</p>
           <p class="post-meta">Comentarios: ${count}</p>
+          ${buttonHTML}
         </article>
       `;
     })
@@ -324,7 +337,7 @@ function renderAdmin() {
           <h3>Publicaciones</h3>
           <table class="admin-table">
             <thead>
-              <tr><th>Título</th><th>Etiqueta</th><th>Imagen</th><th>Acción</th></tr>
+              <tr><th>Título</th><th>Etiqueta</th><th>Imagen</th><th>Botón</th><th>Acción</th></tr>
             </thead>
             <tbody>
               ${posts
@@ -334,6 +347,7 @@ function renderAdmin() {
                     <td>${post.title}</td>
                     <td>${post.tag}</td>
                     <td>${post.image ? '✓' : 'Sin imagen'}</td>
+                    <td><button class="btn btn-primary btn-sm edit-post-button" data-id="${post.id}">${post.buttonEnabled ? '✓ Configurado' : 'Configurar'}</button></td>
                     <td><button class="btn btn-secondary delete-post" data-id="${post.id}">Eliminar</button></td>
                   </tr>
                 `
@@ -341,6 +355,19 @@ function renderAdmin() {
                 .join('')}
             </tbody>
           </table>
+          <div id="postButtonForm" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--surface-2); border-radius: 0.75rem;">
+            <h4>Configurar botón de publicación</h4>
+            <form id="configPostButtonForm">
+              <input type="hidden" name="postId" id="postId">
+              <label>Habilitar botón<input type="checkbox" name="buttonEnabled" id="buttonEnabled"></label>
+              <label>Texto del botón<input type="text" name="buttonText" id="buttonText" placeholder="Ej: Leer más, Visitar, etc."></label>
+              <label>URL del botón<input type="url" name="buttonUrl" id="buttonUrl" placeholder="https://ejemplo.com"></label>
+              <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+                <button class="btn btn-secondary" type="button" id="cancelPostButtonForm">Cancelar</button>
+              </div>
+            </form>
+          </div>
         </div>
 
         <div class="card">
@@ -498,14 +525,14 @@ function renderAdmin() {
         const reader = new FileReader();
         reader.onload = function(e) {
           imageData = e.target.result;
-          const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData }, ...posts];
+          const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData, buttonEnabled: false, buttonText: '', buttonUrl: '' }, ...posts];
           setStorage(storageKeys.posts, updatedPosts);
           renderAdmin();
           form.reset();
         };
         reader.readAsDataURL(imageFile);
       } else {
-        const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData }, ...posts];
+        const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData, buttonEnabled: false, buttonText: '', buttonUrl: '' }, ...posts];
         setStorage(storageKeys.posts, updatedPosts);
         renderAdmin();
         form.reset();
@@ -585,6 +612,48 @@ function renderAdmin() {
         setStorage(storageKeys.comments, updatedComments);
         renderAdmin();
       });
+    });
+
+    document.querySelectorAll('.edit-post-button').forEach(button => {
+      button.addEventListener('click', () => {
+        const postId = button.dataset.id;
+        const post = posts.find(p => p.id === postId);
+        if (!post) return;
+        
+        document.getElementById('postId').value = postId;
+        document.getElementById('buttonEnabled').checked = post.buttonEnabled || false;
+        document.getElementById('buttonText').value = post.buttonText || '';
+        document.getElementById('buttonUrl').value = post.buttonUrl || '';
+        document.getElementById('postButtonForm').style.display = 'block';
+      });
+    });
+
+    document.getElementById('configPostButtonForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const postId = document.getElementById('postId').value;
+      const buttonEnabled = document.getElementById('buttonEnabled').checked;
+      const buttonText = document.getElementById('buttonText').value.trim();
+      const buttonUrl = document.getElementById('buttonUrl').value.trim();
+      
+      if (buttonEnabled && (!buttonText || !buttonUrl)) {
+        alert('Por favor completa el texto y URL del botón.');
+        return;
+      }
+      
+      const updatedPosts = posts.map(post => {
+        if (post.id === postId) {
+          return { ...post, buttonEnabled, buttonText, buttonUrl };
+        }
+        return post;
+      });
+      
+      setStorage(storageKeys.posts, updatedPosts);
+      document.getElementById('postButtonForm').style.display = 'none';
+      renderAdmin();
+    });
+
+    document.getElementById('cancelPostButtonForm').addEventListener('click', () => {
+      document.getElementById('postButtonForm').style.display = 'none';
     });
 
     document.querySelectorAll('.delete-craft').forEach(button => {
