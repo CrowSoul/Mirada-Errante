@@ -120,8 +120,102 @@ function getStorage(key, fallback) {
   return value ? JSON.parse(value) : fallback;
 }
 
-function setStorage(key, value) {
+
+
+// --- Firebase realtime sync helpers ---
+let firebaseAppInstance = null;
+let firebaseDB = null;
+const firebaseRootPath = 'miradaErranteData';
+let firebaseInitialized = false;
+
+function setStorage(key, value, skipRemote = false) {
   localStorage.setItem(key, JSON.stringify(value));
+  if (!skipRemote && firebaseInitialized && firebaseDB) {
+    try {
+      firebaseDB.ref(`${firebaseRootPath}/${key}`).set(value);
+    } catch (e) {
+      console.error('Firebase push error', e);
+    }
+  }
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+async function initFirebase(config) {
+  if (!config) return;
+  try {
+    // Load compat libraries for simple usage
+    if (typeof firebase === 'undefined') {
+      await loadScript('https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js');
+    }
+    if (!firebase.apps || !firebase.apps.length) {
+      firebase.initializeApp(config);
+    }
+    firebaseAppInstance = firebase.app();
+    firebaseDB = firebase.database();
+    firebaseInitialized = true;
+    setupRemoteListeners();
+    const statusEl = document.getElementById('firebaseStatus');
+    if (statusEl) statusEl.textContent = 'Conectado';
+  } catch (err) {
+    console.error('Firebase init error', err);
+    const statusEl = document.getElementById('firebaseStatus');
+    if (statusEl) statusEl.textContent = 'Error al conectar';
+  }
+}
+
+function setupRemoteListeners() {
+  if (!firebaseDB) return;
+  const keys = Object.values(storageKeys);
+  keys.forEach(key => {
+    try {
+      firebaseDB.ref(`${firebaseRootPath}/${key}`).on('value', snapshot => {
+        const val = snapshot.val();
+        if (val !== null) {
+          try {
+            setStorage(key, val, true);
+            // re-render areas that depend on this data
+            renderHome();
+            if (document.body.classList.contains('page-admin')) renderAdmin();
+          } catch (e) {
+            console.error('Error applying remote value', e);
+          }
+        }
+      });
+    } catch (e) {
+      console.error('Listener error for', key, e);
+    }
+  });
+}
+
+function saveFirebaseConfigFromTextarea() {
+  const raw = document.getElementById('firebaseConfigInput')?.value;
+  if (!raw) return alert('Pega la configuración JSON de Firebase.');
+  let obj = null;
+  try {
+    obj = JSON.parse(raw);
+  } catch (e) {
+    return alert('JSON inválido. Asegúrate de pegar el objeto de configuración de Firebase.');
+  }
+  setStorage('firebaseConfig', obj);
+  initFirebase(obj);
+}
+
+function initFirebaseFromSavedConfig() {
+  const cfg = getStorage('firebaseConfig', null);
+  if (cfg) {
+    // If page is ready, initialize; otherwise wait a tick
+    setTimeout(() => initFirebase(cfg), 50);
+  }
 }
 
 function getPosts() {
@@ -486,6 +580,90 @@ function renderAdmin() {
                 .join('')}
             </tbody>
           </table>
+        </div>
+
+        <div class="card">
+          <h3>📊 Base de Datos - Estadísticas</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div style="padding: 1rem; background: var(--surface-2); border-radius: 0.75rem; text-align: center;">
+              <div style="font-size: 2rem; font-weight: bold; color: var(--accent);">${getUsers().length}</div>
+              <div style="color: var(--muted); font-size: 0.9rem;">Usuarios registrados</div>
+            </div>
+            <div style="padding: 1rem; background: var(--surface-2); border-radius: 0.75rem; text-align: center;">
+              <div style="font-size: 2rem; font-weight: bold; color: var(--accent);">${posts.length}</div>
+              <div style="color: var(--muted); font-size: 0.9rem;">Publicaciones</div>
+            </div>
+            <div style="padding: 1rem; background: var(--surface-2); border-radius: 0.75rem; text-align: center;">
+              <div style="font-size: 2rem; font-weight: bold; color: var(--accent);">${comments.length}</div>
+              <div style="color: var(--muted); font-size: 0.9rem;">Comentarios</div>
+            </div>
+            <div style="padding: 1rem; background: var(--surface-2); border-radius: 0.75rem; text-align: center;">
+              <div style="font-size: 2rem; font-weight: bold; color: var(--accent);">${crafts.length}</div>
+              <div style="color: var(--muted); font-size: 0.9rem;">Artesanías</div>
+            </div>
+            <div style="padding: 1rem; background: var(--surface-2); border-radius: 0.75rem; text-align: center;">
+              <div style="font-size: 2rem; font-weight: bold; color: var(--accent);">${books.length}</div>
+              <div style="color: var(--muted); font-size: 0.9rem;">Libros</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <h4 style="margin: 0 0 0.5rem 0;">Sincronización en tiempo real (Firebase)</h4>
+            <textarea id="firebaseConfigInput" placeholder="Pega aquí el objeto de configuración de Firebase (JSON)" style="width: 100%; min-height: 80px; background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 0.75rem; border-radius: 0.5rem;">${JSON.stringify(getStorage('firebaseConfig', null) || '')}</textarea>
+            <div style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:center;">
+              <button class="btn btn-primary" id="saveFirebaseConfig">Conectar Firebase</button>
+              <button class="btn btn-secondary" id="disconnectFirebase">Desconectar</button>
+              <span id="firebaseStatus" style="margin-left:0.5rem; color: var(--muted);"></span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <button class="btn btn-primary" id="exportJSON">📥 Descargar JSON</button>
+            <button class="btn btn-primary" id="exportCSV">📊 Descargar CSV</button>
+          </div>
+
+          <div id="databaseViewer" style="margin-top: 2rem;">
+            <h4>Datos de usuarios registrados</h4>
+            <table class="admin-table" style="margin-bottom: 2rem;">
+              <thead>
+                <tr><th>Usuario</th><th>Registrado</th></tr>
+              </thead>
+              <tbody>
+                ${getUsers().length > 0 
+                  ? getUsers().map(user => `
+                    <tr>
+                      <td>${user.username}</td>
+                      <td>ID: ${user.id}</td>
+                    </tr>
+                  `).join('')
+                  : '<tr><td colspan="2">Sin usuarios registrados</td></tr>'
+                }
+              </tbody>
+            </table>
+
+            <h4>Resumen de publicaciones</h4>
+            <table class="admin-table" style="margin-bottom: 2rem;">
+              <thead>
+                <tr><th>Título</th><th>Autor</th><th>Comentarios</th><th>Botón personalizado</th></tr>
+              </thead>
+              <tbody>
+                ${posts.length > 0
+                  ? posts.map(post => {
+                    const postComments = comments.filter(c => c.postId === post.id).length;
+                    return `
+                    <tr>
+                      <td>${post.title}</td>
+                      <td>${post.tag}</td>
+                      <td>${postComments}</td>
+                      <td>${post.buttonEnabled ? '✓ Sí' : 'No'}</td>
+                    </tr>
+                  `;
+                  }).join('')
+                  : '<tr><td colspan="4">Sin publicaciones</td></tr>'
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     ` : ''}
@@ -885,8 +1063,115 @@ function renderAdmin() {
         renderAdmin();
       });
     });
+
+    // Export JSON
+    const exportJSONBtn = document.getElementById('exportJSON');
+    if (exportJSONBtn) {
+      exportJSONBtn.addEventListener('click', () => {
+        const data = {
+          exportDate: new Date().toISOString(),
+          usuarios: getUsers(),
+          publicaciones: posts,
+          comentarios: comments,
+          artesanias: crafts,
+          libros: books
+        };
+        const dataStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mirada-errante-datos-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Export CSV
+    const exportCSVBtn = document.getElementById('exportCSV');
+    if (exportCSVBtn) {
+      exportCSVBtn.addEventListener('click', () => {
+        const csvData = [];
+        
+        // Usuarios
+        csvData.push('\n=== USUARIOS ===\n');
+        csvData.push('Usuario,ID\n');
+        getUsers().forEach(user => {
+          csvData.push(`"${user.username}","${user.id}"\n`);
+        });
+
+        // Publicaciones
+        csvData.push('\n=== PUBLICACIONES ===\n');
+        csvData.push('Título,Categoría,Comentarios,Botón Personalizado\n');
+        posts.forEach(post => {
+          const postComments = comments.filter(c => c.postId === post.id).length;
+          csvData.push(`"${post.title}","${post.tag}",${postComments},"${post.buttonEnabled ? 'Sí' : 'No'}"\n`);
+        });
+
+        // Comentarios
+        csvData.push('\n=== COMENTARIOS ===\n');
+        csvData.push('Usuario,Publicación,Comentario,Fecha\n');
+        comments.forEach(comment => {
+          const post = posts.find(p => p.id === comment.postId);
+          csvData.push(`"${comment.username}","${post?.title || 'N/A'}","${comment.text.replace(/"/g, '""')}","${new Date(comment.createdAt).toLocaleString()}"\n`);
+        });
+
+        // Artesanías
+        csvData.push('\n=== ARTESANÍAS ===\n');
+        csvData.push('Título,Categoría,Precio,Descripción\n');
+        crafts.forEach(craft => {
+          csvData.push(`"${craft.title}","${craft.tag}","$${craft.price}","${craft.description.replace(/"/g, '""')}"\n`);
+        });
+
+        // Libros
+        csvData.push('\n=== LIBROS ===\n');
+        csvData.push('Título,Categoría,Precio,Descripción\n');
+        books.forEach(book => {
+          csvData.push(`"${book.title}","${book.tag}","$${book.price}","${book.description.replace(/"/g, '""')}"\n`);
+        });
+
+        const csvContent = csvData.join('');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mirada-errante-datos-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+    // Firebase connect/disconnect buttons
+    const saveFbBtn = document.getElementById('saveFirebaseConfig');
+    if (saveFbBtn) {
+      saveFbBtn.addEventListener('click', () => {
+        saveFirebaseConfigFromTextarea();
+      });
+    }
+
+    const disconnectFbBtn = document.getElementById('disconnectFirebase');
+    if (disconnectFbBtn) {
+      disconnectFbBtn.addEventListener('click', () => {
+        try {
+          if (firebaseDB) {
+            Object.values(storageKeys).forEach(k => {
+              firebaseDB.ref(`${firebaseRootPath}/${k}`).off();
+            });
+          }
+        } catch (e) {
+          console.warn('Error during Firebase disconnect', e);
+        }
+        firebaseInitialized = false;
+        firebaseDB = null;
+        setStorage('firebaseConfig', null);
+        const statusEl = document.getElementById('firebaseStatus');
+        if (statusEl) statusEl.textContent = 'Desconectado';
+      });
+    }
   }
 }
+
+// Auto-init Firebase if config saved
+initFirebaseFromSavedConfig();
 
 function activateHoverAnimations() {
   document.querySelectorAll('.hover-float, .post-card, .comment-card, .card').forEach((element, index) => {

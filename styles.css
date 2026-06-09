@@ -545,6 +545,23 @@ button[type="button"] {
   padding: 0.6rem 1rem;
 }
 
+#exportJSON,
+#exportCSV {
+  width: 100%;
+  text-align: center;
+}
+
+#databaseViewer h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+#databaseViewer h4:first-child {
+  margin-top: 0;
+}
+
 .footer-inner {
   display: flex;
   justify-content: space-between;
