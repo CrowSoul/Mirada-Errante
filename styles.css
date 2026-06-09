@@ -125,6 +125,103 @@ select {
   transform: translateY(-2px);
 }
 
+.zoomable-image {
+  cursor: zoom-in;
+}
+
+.image-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  z-index: 9999;
+}
+
+.image-modal-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.image-modal {
+  max-width: min(900px, 100%);
+  width: 100%;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background: rgba(17, 20, 33, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.image-modal-img {
+  width: 100%;
+  display: block;
+  max-height: 80vh;
+  object-fit: contain;
+  background: #070712;
+}
+
+.image-modal-caption {
+  padding: 1.25rem 1.5rem 1.75rem;
+  color: var(--text);
+  font-size: 0.98rem;
+  line-height: 1.7;
+  background: rgba(6, 8, 18, 0.95);
+}
+
+.image-modal-caption strong {
+  display: block;
+  margin-bottom: 0.85rem;
+  color: var(--accent);
+}
+
+.image-modal-comments {
+  padding: 1.25rem 1.5rem;
+  background: rgba(6, 8, 18, 0.95);
+  color: var(--text);
+}
+
+.image-modal-comments-heading {
+  margin-bottom: 1rem;
+}
+
+.image-modal-comments .comment-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.image-modal-comment-form {
+  padding: 1.25rem 1.5rem 1.5rem;
+  background: rgba(6, 8, 18, 0.95);
+}
+
+.image-modal-comment-form .auth-note {
+  margin: 0;
+}
+
+.image-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  font-size: 1.45rem;
+  cursor: pointer;
+}
+
 .btn-primary {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   color: white;
@@ -242,6 +339,12 @@ select {
   margin-top: 0;
 }
 
+.image-hint {
+  margin: 0.8rem 0 0.4rem;
+  color: #ff7fbf;
+  font-size: 0.95rem;
+}
+
 .post-card p,
 .book-card p,
 .craft-card p,
@@ -258,8 +361,8 @@ select {
   gap: 0.4rem;
   padding: 0.35rem 0.85rem;
   border-radius: 999px;
-  background: rgba(167, 139, 250, 0.12);
-  color: var(--accent);
+  background: rgba(255, 128, 196, 0.14);
+  color: #ff7fbf;
   font-size: 0.85rem;
   margin-bottom: 1rem;
 }
@@ -294,6 +397,13 @@ select {
   margin: 0 0 1rem;
 }
 
+.auth-note {
+  color: var(--muted);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 input,
 textarea,
 select {
@@ -314,7 +424,7 @@ textarea {
 label {
   display: block;
   font-size: 0.95rem;
-  color: var(--muted);
+  color: #ff7fbf;
 }
 
 button[type="submit"],
@@ -332,7 +442,7 @@ button[type="button"] {
   margin-top: 1rem;
 }
 
-.comment-meta {
+.comment-card .comment-meta {
   display: block;
   margin-top: 1rem;
   color: var(--muted);
@@ -351,6 +461,20 @@ button[type="button"] {
 .admin-actions {
   display: grid;
   gap: 1.2rem;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-bottom: 1.5rem;
+}
+
+.admin-profile-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.75rem;
+  padding: 1.5rem;
 }
 
 .admin-table {
