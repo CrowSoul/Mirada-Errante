@@ -3,7 +3,8 @@ const storageKeys = {
   comments: 'miradaErranteComments',
   users: 'miradaErranteUsers',
   admin: 'miradaErranteAdminSession',
-  crafts: 'miradaErranteCrafts'
+  crafts: 'miradaErranteCrafts',
+  books: 'miradaErranteBooks'
 };
 
 const defaultPosts = [
@@ -65,6 +66,41 @@ const defaultCrafts = [
   }
 ];
 
+const defaultBooks = [
+  {
+    id: 'book-1',
+    title: 'El mapa de las sombras',
+    description: 'Una novela intensa sobre viajes interiores y secretos que no quieren ser descubiertos.',
+    tag: 'Literatura',
+    price: 28.99,
+    image: 'logo.svg'
+  },
+  {
+    id: 'book-2',
+    title: 'Balance de instantes',
+    description: 'Reflexiones elegantes sobre arte, memoria y los silencios que llenan las calles nocturnas.',
+    tag: 'Ensayo',
+    price: 24.99,
+    image: 'logo.svg'
+  },
+  {
+    id: 'book-3',
+    title: 'Rituales de papel',
+    description: 'Poemas que se deslizan entre la nostalgia, la belleza urbana y la intemperie del tiempo.',
+    tag: 'Poesía',
+    price: 19.99,
+    image: 'logo.svg'
+  },
+  {
+    id: 'book-4',
+    title: 'Crónicas de un paisaje',
+    description: 'Relatos visuales y voces antiguas que reconstruyen el pasado desde el presente.',
+    tag: 'Historia',
+    price: 32.99,
+    image: 'logo.svg'
+  }
+];
+
 const adminCredentials = {
   username: 'miradaadmin',
   password: 'Errante2026!'
@@ -89,6 +125,10 @@ function getComments() {
 
 function getCrafts() {
   return getStorage(storageKeys.crafts, defaultCrafts);
+}
+
+function getBooks() {
+  return getStorage(storageKeys.books, defaultBooks);
 }
 
 function getUsers() {
@@ -308,6 +348,7 @@ function renderAdmin() {
   const posts = getPosts();
   const comments = getComments();
   const crafts = getCrafts();
+  const books = getBooks();
 
   adminArea.innerHTML = `
     <div class="admin-actions">
@@ -343,6 +384,24 @@ function renderAdmin() {
           </label>
           <p style="font-size: 0.85rem; color: #999;">Ingresa una URL o sube un archivo. Si ambos están presentes, se usa la imagen subida.</p>
           <button class="btn btn-primary" type="submit">Guardar artículo</button>
+        </form>
+      </div>
+
+      <div class="form-card">
+        <h3>Agregar nuevo libro</h3>
+        <form id="addBookForm">
+          <label>Título<input type="text" name="title" required></label>
+          <label>Categoría<input type="text" name="tag" required></label>
+          <label>Descripción<textarea name="description" required></textarea></label>
+          <label>Precio<input type="number" name="price" step="0.01" min="0" required></label>
+          <label>URL de imagen
+            <input type="text" name="imageUrl" placeholder="https://ejemplo.com/imagen.jpg">
+          </label>
+          <label>O subir imagen
+            <input type="file" name="imageFile" accept="image/*">
+          </label>
+          <p style="font-size: 0.85rem; color: #999;">Ingresa una URL o sube un archivo. Si ambos están presentes, se usa la imagen subida.</p>
+          <button class="btn btn-primary" type="submit">Guardar libro</button>
         </form>
       </div>
 
@@ -385,6 +444,30 @@ function renderAdmin() {
                   <td>$${craft.price}</td>
                   <td>${craft.image ? '✓' : 'Sin imagen'}</td>
                   <td><button class="btn btn-secondary delete-craft" data-id="${craft.id}">Eliminar</button></td>
+                </tr>
+              `
+              )
+              .join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Libros</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Título</th><th>Categoría</th><th>Precio</th><th>Imagen</th><th>Acción</th></tr>
+          </thead>
+          <tbody>
+            ${books
+              .map(
+                book => `
+                <tr>
+                  <td>${book.title}</td>
+                  <td>${book.tag}</td>
+                  <td>$${book.price}</td>
+                  <td>${book.image ? '✓' : 'Sin imagen'}</td>
+                  <td><button class="btn btn-secondary delete-book" data-id="${book.id}">Eliminar</button></td>
                 </tr>
               `
               )
@@ -485,6 +568,39 @@ function renderAdmin() {
     }
   });
 
+  // Manejar subida de libros
+  document.getElementById('addBookForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const form = event.target;
+    const title = form.title.value.trim();
+    const tag = form.tag.value.trim();
+    const description = form.description.value.trim();
+    const price = parseFloat(form.price.value);
+    const imageUrl = form.imageUrl.value.trim();
+    const imageFile = form.imageFile.files[0];
+
+    if (!title || !tag || !description || price < 0) return;
+
+    let imageData = imageUrl || 'logo.svg';
+
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imageData = e.target.result;
+        const updatedBooks = [{ id: `book-${Date.now()}`, title, tag, description, price, image: imageData }, ...books];
+        setStorage(storageKeys.books, updatedBooks);
+        renderAdmin();
+        form.reset();
+      };
+      reader.readAsDataURL(imageFile);
+    } else {
+      const updatedBooks = [{ id: `book-${Date.now()}`, title, tag, description, price, image: imageData }, ...books];
+      setStorage(storageKeys.books, updatedBooks);
+      renderAdmin();
+      form.reset();
+    }
+  });
+
   document.querySelectorAll('.delete-post').forEach(button => {
     button.addEventListener('click', () => {
       const id = button.dataset.id;
@@ -501,6 +617,15 @@ function renderAdmin() {
       const id = button.dataset.id;
       const updatedCrafts = crafts.filter(craft => craft.id !== id);
       setStorage(storageKeys.crafts, updatedCrafts);
+      renderAdmin();
+    });
+  });
+
+  document.querySelectorAll('.delete-book').forEach(button => {
+    button.addEventListener('click', () => {
+      const id = button.dataset.id;
+      const updatedBooks = books.filter(book => book.id !== id);
+      setStorage(storageKeys.books, updatedBooks);
       renderAdmin();
     });
   });
@@ -541,6 +666,7 @@ function renderCrafts() {
   cardsGrid.innerHTML = crafts
     .map(craft => {
       const imageUrl = craft.image || 'logo.svg';
+      const whatsappLink = generateWhatsAppLink(craft.title);
       return `
         <article class="craft-card hover-float">
           <img src="${imageUrl}" alt="${craft.title}" style="width: 100%; height: 200px; object-fit: cover; margin-bottom: 1rem; border-radius: 4px;">
@@ -548,10 +674,42 @@ function renderCrafts() {
           <h3>${craft.title}</h3>
           <p>${craft.description}</p>
           <p style="font-weight: bold; color: #d4a574;">$${craft.price.toFixed(2)}</p>
+          <a href="${whatsappLink}" target="_blank" class="btn btn-primary" style="display: inline-block; text-align: center; margin-top: 1rem; text-decoration: none;">Comprar</a>
         </article>
       `;
     })
     .join('');
+}
+
+function renderBooks() {
+  const cardsGrid = document.querySelector('.cards-grid');
+  if (!cardsGrid || !document.body.classList.contains('page-library')) return;
+
+  const books = getBooks();
+
+  cardsGrid.innerHTML = books
+    .map(book => {
+      const imageUrl = book.image || 'logo.svg';
+      const whatsappLink = generateWhatsAppLink(book.title);
+      return `
+        <article class="book-card hover-float">
+          <img src="${imageUrl}" alt="${book.title}" style="width: 100%; height: 200px; object-fit: cover; margin-bottom: 1rem; border-radius: 4px;">
+          <span class="tag">${book.tag}</span>
+          <h3>${book.title}</h3>
+          <p>${book.description}</p>
+          <p style="font-weight: bold; color: #d4a574;">$${book.price.toFixed(2)}</p>
+          <a href="${whatsappLink}" target="_blank" class="btn btn-primary" style="display: inline-block; text-align: center; margin-top: 1rem; text-decoration: none;">Comprar</a>
+        </article>
+      `;
+    })
+    .join('');
+}
+
+function generateWhatsAppLink(productName) {
+  const phoneNumber = '529711689009';
+  const message = `Hola, quiero comprar ${productName}`;
+  const encodedMessage = encodeURIComponent(message);
+  return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -565,6 +723,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (document.body.classList.contains('page-crafts')) {
     renderCrafts();
+  }
+
+  if (document.body.classList.contains('page-library')) {
+    renderBooks();
   }
 
   activateHoverAnimations();
