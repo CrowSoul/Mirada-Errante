@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mirada Errante - Inicio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="page-home">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <img src="logo.svg" alt="Mirada Errante" class="brand-logo" />
+        <span>Mirada Errante</span>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html">Inicio</a>
+        <a href="biblioteca.html">Biblioteca</a>
+        <a href="artesanias.html">Artesanías</a>
+        <a href="quienes-somos.html">Quiénes somos</a>
+        <a href="admin.html" class="nav-admin">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero-section">
+      <div class="container hero-grid">
+        <div class="hero-copy-block">
+          <p class="eyebrow">Mirada Errante</p>
+          <h1>Libros y arte en un mundo oscuro y elegante</h1>
+          <p>Explora publicaciones únicas, comenta en las historias del inicio y descubre artesanías hechas a mano con un estilo misterioso.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#publicaciones">Ver publicaciones</a>
+            <a class="btn btn-secondary" href="#comentarios">Comentar</a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <img class="hero-logo-thumb" src="logo.svg" alt="Miniatura Mirada Errante" />
+          <div class="hero-card hover-float">
+            <h2>Exposición reciente</h2>
+            <p>Descubre nuevas piezas literarias y visuales que despiertan la curiosidad.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section container" id="publicaciones">
+      <div class="section-heading">
+        <h2>Publicaciones del día</h2>
+        <p>Comenta tu opinión creando un usuario y participa en la conversación.</p>
+      </div>
+      <div class="cards-grid" id="postsGrid"></div>
+    </section>
+
+    <section class="comments-section container" id="comentarios">
+      <div class="section-heading">
+        <h2>Comentarios</h2>
+        <p>Regístrate o inicia sesión para dejar un comentario en las publicaciones.</p>
+      </div>
+      <div class="comment-layout">
+        <aside class="comment-panel">
+          <div id="authPanel"></div>
+        </aside>
+        <div class="comment-feed" id="commentFeed"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© 2026 Mirada Errante. Espacio para libros, arte y expresiones creativas.</p>
+      <div class="footer-links">
+        <a href="biblioteca.html">Biblioteca</a>
+        <a href="admin.html">Admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

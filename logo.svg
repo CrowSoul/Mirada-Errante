@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#d4d4f9" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" rx="45" fill="#11141f" />
+  <path d="M55,150 L150,45 L245,150 L150,255 Z" fill="#171b2d" stroke="#ffffff" stroke-width="8" />
+  <circle cx="150" cy="150" r="65" fill="#ffffff" opacity="0.1" />
+  <circle cx="150" cy="150" r="40" fill="#ffffff" />
+  <circle cx="150" cy="150" r="17" fill="#11141f" />
+  <path d="M85,150 C105,110 195,110 215,150 C195,190 105,190 85,150 Z" fill="#ffffff" opacity="0.18" />
+  <path d="M95,150 C115,120 185,120 205,150 C185,180 115,180 95,150 Z" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" />
+  <path d="M150,80 L150,62" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.45" />
+  <path d="M150,220 L150,202" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.45" />
+  <path d="M80,150 L62,150" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.45" />
+  <path d="M238,150 L220,150" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.45" />
+  <text x="150" y="282" text-anchor="middle" fill="#94a3b8" font-family="Inter, sans-serif" font-size="18" letter-spacing="0.2em">MIRADA</text>
+</svg>
