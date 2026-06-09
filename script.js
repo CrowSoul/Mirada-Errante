@@ -2,7 +2,8 @@ const storageKeys = {
   posts: 'miradaErrantePosts',
   comments: 'miradaErranteComments',
   users: 'miradaErranteUsers',
-  admin: 'miradaErranteAdminSession'
+  admin: 'miradaErranteAdminSession',
+  crafts: 'miradaErranteCrafts'
 };
 
 const defaultPosts = [
@@ -10,19 +11,57 @@ const defaultPosts = [
     id: 'post-1',
     title: 'Luz entre los libros',
     excerpt: 'Una breve exposición sobre el tránsito entre la lectura y la mirada errante.',
-    tag: 'Literatura'
+    tag: 'Literatura',
+    image: 'logo.svg'
   },
   {
     id: 'post-2',
     title: 'Arte que susurra',
     excerpt: 'Reflexiones sobre piezas artesanales que dialogan con la oscuridad elegante.',
-    tag: 'Artesanía'
+    tag: 'Artesanía',
+    image: 'logo.svg'
   },
   {
     id: 'post-3',
     title: 'Navegando el silencio',
     excerpt: 'Un recorrido visual y literario que invita a explorar cada rincón de la exposición.',
-    tag: 'Exposición'
+    tag: 'Exposición',
+    image: 'logo.svg'
+  }
+];
+
+const defaultCrafts = [
+  {
+    id: 'craft-1',
+    title: 'Vaso lunar',
+    description: 'Escultura utilitaria con esmalte profundo y diseño artesanal.',
+    tag: 'Cerámica',
+    price: 45,
+    image: 'logo.svg'
+  },
+  {
+    id: 'craft-2',
+    title: 'Pañuelo de memoria',
+    description: 'Accesorio textil bordado para prendas con estilo sobrio y elegante.',
+    tag: 'Joyería',
+    price: 35,
+    image: 'logo.svg'
+  },
+  {
+    id: 'craft-3',
+    title: 'Relato en tinta',
+    description: 'Obra original en papel con trazos y sombras inspiracionales.',
+    tag: 'Ilustración',
+    price: 60,
+    image: 'logo.svg'
+  },
+  {
+    id: 'craft-4',
+    title: 'Caja de sal',
+    description: 'Contenedor artesanal con textura y detalles en tono oscuro.',
+    tag: 'Decoración',
+    price: 25,
+    image: 'logo.svg'
   }
 ];
 
@@ -46,6 +85,10 @@ function getPosts() {
 
 function getComments() {
   return getStorage(storageKeys.comments, []);
+}
+
+function getCrafts() {
+  return getStorage(storageKeys.crafts, defaultCrafts);
 }
 
 function getUsers() {
@@ -96,9 +139,10 @@ function renderHome() {
   postsGrid.innerHTML = posts
     .map(post => {
       const count = comments.filter(comment => comment.postId === post.id).length;
+      const imageUrl = post.image || 'logo.svg';
       return `
         <article class="post-card hover-float">
-          <img class="post-thumb" src="logo.svg" alt="Miniatura ${post.title}" />
+          <img class="post-thumb" src="${imageUrl}" alt="Miniatura ${post.title}" />
           <span class="post-meta">${post.tag}</span>
           <h3>${post.title}</h3>
           <p>${post.excerpt}</p>
@@ -263,6 +307,7 @@ function renderAdmin() {
 
   const posts = getPosts();
   const comments = getComments();
+  const crafts = getCrafts();
 
   adminArea.innerHTML = `
     <div class="admin-actions">
@@ -272,14 +317,40 @@ function renderAdmin() {
           <label>Título<input type="text" name="title" required></label>
           <label>Etiqueta<input type="text" name="tag" required></label>
           <label>Descripción<textarea name="excerpt" required></textarea></label>
+          <label>URL de imagen
+            <input type="text" name="imageUrl" placeholder="https://ejemplo.com/imagen.jpg">
+          </label>
+          <label>O subir imagen
+            <input type="file" name="imageFile" accept="image/*">
+          </label>
+          <p style="font-size: 0.85rem; color: #999;">Ingresa una URL o sube un archivo. Si ambos están presentes, se usa la imagen subida.</p>
           <button class="btn btn-primary" type="submit">Guardar publicación</button>
         </form>
       </div>
+
+      <div class="form-card">
+        <h3>Agregar nuevo artículo (Artesanía)</h3>
+        <form id="addCraftForm">
+          <label>Título<input type="text" name="title" required></label>
+          <label>Categoría<input type="text" name="tag" required></label>
+          <label>Descripción<textarea name="description" required></textarea></label>
+          <label>Precio<input type="number" name="price" step="0.01" min="0" required></label>
+          <label>URL de imagen
+            <input type="text" name="imageUrl" placeholder="https://ejemplo.com/imagen.jpg">
+          </label>
+          <label>O subir imagen
+            <input type="file" name="imageFile" accept="image/*">
+          </label>
+          <p style="font-size: 0.85rem; color: #999;">Ingresa una URL o sube un archivo. Si ambos están presentes, se usa la imagen subida.</p>
+          <button class="btn btn-primary" type="submit">Guardar artículo</button>
+        </form>
+      </div>
+
       <div class="card">
         <h3>Publicaciones</h3>
         <table class="admin-table">
           <thead>
-            <tr><th>Título</th><th>Etiqueta</th><th>Acción</th></tr>
+            <tr><th>Título</th><th>Etiqueta</th><th>Imagen</th><th>Acción</th></tr>
           </thead>
           <tbody>
             ${posts
@@ -288,6 +359,7 @@ function renderAdmin() {
                 <tr>
                   <td>${post.title}</td>
                   <td>${post.tag}</td>
+                  <td>${post.image ? '✓' : 'Sin imagen'}</td>
                   <td><button class="btn btn-secondary delete-post" data-id="${post.id}">Eliminar</button></td>
                 </tr>
               `
@@ -296,6 +368,31 @@ function renderAdmin() {
           </tbody>
         </table>
       </div>
+
+      <div class="card">
+        <h3>Artículos (Artesanías)</h3>
+        <table class="admin-table">
+          <thead>
+            <tr><th>Título</th><th>Categoría</th><th>Precio</th><th>Imagen</th><th>Acción</th></tr>
+          </thead>
+          <tbody>
+            ${crafts
+              .map(
+                craft => `
+                <tr>
+                  <td>${craft.title}</td>
+                  <td>${craft.tag}</td>
+                  <td>$${craft.price}</td>
+                  <td>${craft.image ? '✓' : 'Sin imagen'}</td>
+                  <td><button class="btn btn-secondary delete-craft" data-id="${craft.id}">Eliminar</button></td>
+                </tr>
+              `
+              )
+              .join('')}
+          </tbody>
+        </table>
+      </div>
+
       <div class="card">
         <h3>Comentarios recientes</h3>
         <table class="admin-table">
@@ -323,16 +420,69 @@ function renderAdmin() {
     </div>
   `;
 
+  // Manejar subida de publicaciones
   document.getElementById('addPostForm').addEventListener('submit', event => {
     event.preventDefault();
-    const form = new FormData(event.target);
-    const title = form.get('title').trim();
-    const tag = form.get('tag').trim();
-    const excerpt = form.get('excerpt').trim();
+    const form = event.target;
+    const title = form.title.value.trim();
+    const tag = form.tag.value.trim();
+    const excerpt = form.excerpt.value.trim();
+    const imageUrl = form.imageUrl.value.trim();
+    const imageFile = form.imageFile.files[0];
+
     if (!title || !tag || !excerpt) return;
-    const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt }, ...posts];
-    setStorage(storageKeys.posts, updatedPosts);
-    renderAdmin();
+
+    let imageData = imageUrl || 'logo.svg';
+
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imageData = e.target.result;
+        const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData }, ...posts];
+        setStorage(storageKeys.posts, updatedPosts);
+        renderAdmin();
+        form.reset();
+      };
+      reader.readAsDataURL(imageFile);
+    } else {
+      const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData }, ...posts];
+      setStorage(storageKeys.posts, updatedPosts);
+      renderAdmin();
+      form.reset();
+    }
+  });
+
+  // Manejar subida de artículos
+  document.getElementById('addCraftForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const form = event.target;
+    const title = form.title.value.trim();
+    const tag = form.tag.value.trim();
+    const description = form.description.value.trim();
+    const price = parseFloat(form.price.value);
+    const imageUrl = form.imageUrl.value.trim();
+    const imageFile = form.imageFile.files[0];
+
+    if (!title || !tag || !description || price < 0) return;
+
+    let imageData = imageUrl || 'logo.svg';
+
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imageData = e.target.result;
+        const updatedCrafts = [{ id: `craft-${Date.now()}`, title, tag, description, price, image: imageData }, ...crafts];
+        setStorage(storageKeys.crafts, updatedCrafts);
+        renderAdmin();
+        form.reset();
+      };
+      reader.readAsDataURL(imageFile);
+    } else {
+      const updatedCrafts = [{ id: `craft-${Date.now()}`, title, tag, description, price, image: imageData }, ...crafts];
+      setStorage(storageKeys.crafts, updatedCrafts);
+      renderAdmin();
+      form.reset();
+    }
   });
 
   document.querySelectorAll('.delete-post').forEach(button => {
@@ -342,6 +492,15 @@ function renderAdmin() {
       const updatedComments = comments.filter(comment => comment.postId !== id);
       setStorage(storageKeys.posts, updatedPosts);
       setStorage(storageKeys.comments, updatedComments);
+      renderAdmin();
+    });
+  });
+
+  document.querySelectorAll('.delete-craft').forEach(button => {
+    button.addEventListener('click', () => {
+      const id = button.dataset.id;
+      const updatedCrafts = crafts.filter(craft => craft.id !== id);
+      setStorage(storageKeys.crafts, updatedCrafts);
       renderAdmin();
     });
   });
@@ -373,6 +532,28 @@ function activateHoverAnimations() {
   });
 }
 
+function renderCrafts() {
+  const cardsGrid = document.querySelector('.cards-grid');
+  if (!cardsGrid || !document.body.classList.contains('page-crafts')) return;
+
+  const crafts = getCrafts();
+
+  cardsGrid.innerHTML = crafts
+    .map(craft => {
+      const imageUrl = craft.image || 'logo.svg';
+      return `
+        <article class="craft-card hover-float">
+          <img src="${imageUrl}" alt="${craft.title}" style="width: 100%; height: 200px; object-fit: cover; margin-bottom: 1rem; border-radius: 4px;">
+          <span class="tag">${craft.tag}</span>
+          <h3>${craft.title}</h3>
+          <p>${craft.description}</p>
+          <p style="font-weight: bold; color: #d4a574;">$${craft.price.toFixed(2)}</p>
+        </article>
+      `;
+    })
+    .join('');
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   if (document.body.classList.contains('page-home')) {
     renderHome();
@@ -380,6 +561,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (document.body.classList.contains('page-admin')) {
     renderAdmin();
+  }
+
+  if (document.body.classList.contains('page-crafts')) {
+    renderCrafts();
   }
 
   activateHoverAnimations();

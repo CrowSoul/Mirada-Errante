@@ -414,3 +414,23 @@ button[type="button"] {
     width: 100%;
   }
 }
+
+/* File input styling */
+input[type="file"] {
+  padding: 0.6rem 0.5rem !important;
+}
+
+input[type="file"]::file-selector-button {
+  background: var(--accent);
+  color: var(--background);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  margin-right: 0.8rem;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: #b89fff;
+}
