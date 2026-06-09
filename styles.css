@@ -470,6 +470,31 @@ button[type="button"] {
   font-size: 0.9rem;
 }
 
+.comment-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem !important;
+}
+
+.comment-actions .btn-sm {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+#editCommentForm textarea,
+#modalCommentForm textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  margin-bottom: 0.5rem;
+}
+
 .admin-section {
   padding: 3.5rem 0;
 }

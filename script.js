@@ -979,6 +979,121 @@ function createImageModal() {
   });
 }
 
+function attachCommentEventListeners(currentUser, postId) {
+  const overlay = document.getElementById('imageModalOverlay');
+  const commentsEl = overlay.querySelector('.image-modal-comments');
+  const formEl = overlay.querySelector('.image-modal-comment-form');
+
+  document.querySelectorAll('.edit-comment-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const commentId = button.dataset.commentId;
+      const comment = getComments().find(c => c.id === commentId);
+      if (!comment) return;
+
+      document.getElementById('editCommentId').value = commentId;
+      document.getElementById('editCommentText').value = comment.text;
+      document.getElementById('editCommentForm').style.display = 'block';
+      document.getElementById('modalCommentForm').style.display = 'none';
+    });
+  });
+
+  document.querySelectorAll('.delete-comment-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const commentId = button.dataset.commentId;
+      if (!confirm('¿Estás seguro de que quieres eliminar este comentario?')) return;
+
+      const updatedComments = getComments().filter(c => c.id !== commentId);
+      setStorage(storageKeys.comments, updatedComments);
+      renderHome();
+
+      const postComments = getComments().filter(comment => comment.postId === postId);
+      commentsEl.innerHTML = `
+        <div class="image-modal-comments-heading"><h4>Comentarios</h4></div>
+        ${
+          postComments.length
+            ? postComments
+                .map(
+                  comment => `
+                    <div class="comment-card" data-comment-id="${comment.id}">
+                      <p>${comment.text}</p>
+                      <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
+                      ${currentUser && currentUser.username === comment.username ? `
+                        <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                          <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
+                          <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `
+                )
+                .join('')
+            : '<p>No hay comentarios todavía.</p>'
+        }
+      `;
+      attachCommentEventListeners(currentUser, postId);
+    });
+  });
+
+  const editForm = document.getElementById('editCommentModalForm');
+  if (editForm) {
+    editForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const commentId = document.getElementById('editCommentId').value;
+      const newText = document.getElementById('editCommentText').value.trim();
+
+      if (!newText) return;
+
+      const updatedComments = getComments().map(comment => {
+        if (comment.id === commentId) {
+          return { ...comment, text: newText };
+        }
+        return comment;
+      });
+
+      setStorage(storageKeys.comments, updatedComments);
+      renderHome();
+
+      const postComments = getComments().filter(comment => comment.postId === postId);
+      commentsEl.innerHTML = `
+        <div class="image-modal-comments-heading"><h4>Comentarios</h4></div>
+        ${
+          postComments.length
+            ? postComments
+                .map(
+                  comment => `
+                    <div class="comment-card" data-comment-id="${comment.id}">
+                      <p>${comment.text}</p>
+                      <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
+                      ${currentUser && currentUser.username === comment.username ? `
+                        <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                          <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
+                          <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `
+                )
+                .join('')
+            : '<p>No hay comentarios todavía.</p>'
+        }
+      `;
+
+      document.getElementById('editCommentForm').style.display = 'none';
+      document.getElementById('modalCommentForm').style.display = 'block';
+      document.getElementById('modalCommentForm').reset();
+      attachCommentEventListeners(currentUser, postId);
+    });
+  }
+
+  const cancelEditBtn = document.getElementById('cancelEditComment');
+  if (cancelEditBtn) {
+    cancelEditBtn.addEventListener('click', () => {
+      document.getElementById('editCommentForm').style.display = 'none';
+      document.getElementById('modalCommentForm').style.display = 'block';
+    });
+  }
+}
+
 function attachImageModalListeners() {
   createImageModal();
   const overlay = document.getElementById('imageModalOverlay');
@@ -1009,9 +1124,15 @@ function attachImageModalListeners() {
               ? postComments
                   .map(
                     comment => `
-                      <div class="comment-card">
+                      <div class="comment-card" data-comment-id="${comment.id}">
                         <p>${comment.text}</p>
                         <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
+                        ${currentUser && currentUser.username === comment.username ? `
+                          <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
+                            <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
+                          </div>
+                        ` : ''}
                       </div>
                     `
                   )
@@ -1024,8 +1145,21 @@ function attachImageModalListeners() {
           formEl.innerHTML = `
             <form id="modalCommentForm" data-post-id="${postId}">
               <label>Tu comentario<textarea name="comment" required placeholder="Escribe tu reflexión..."></textarea></label>
-              <button class="btn btn-primary" type="submit">Enviar comentario</button>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button class="btn btn-primary" type="submit" style="flex: 1;">Publicar comentario</button>
+              </div>
             </form>
+            <div id="editCommentForm" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+              <h5 style="margin-top: 0;">Editar comentario</h5>
+              <form id="editCommentModalForm">
+                <input type="hidden" id="editCommentId">
+                <textarea id="editCommentText" required placeholder="Edita tu comentario..."></textarea>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                  <button class="btn btn-primary" type="submit" style="flex: 1;">Guardar cambios</button>
+                  <button class="btn btn-secondary" type="button" id="cancelEditComment" style="flex: 1;">Cancelar</button>
+                </div>
+              </form>
+            </div>
           `;
           const modalForm = overlay.querySelector('#modalCommentForm');
           modalForm.addEventListener('submit', event => {
@@ -1049,16 +1183,25 @@ function attachImageModalListeners() {
               ${updatedComments
                 .map(
                   comment => `
-                    <div class="comment-card">
+                    <div class="comment-card" data-comment-id="${comment.id}">
                       <p>${comment.text}</p>
                       <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
+                      ${currentUser && currentUser.username === comment.username ? `
+                        <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                          <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
+                          <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
+                        </div>
+                      ` : ''}
                     </div>
                   `
                 )
                 .join('')}
             `;
+            attachCommentEventListeners(currentUser, postId);
             modalForm.reset();
           });
+
+          attachCommentEventListeners(currentUser, postId);
         } else {
           formEl.innerHTML = `
             <p class="auth-note">Inicia sesión en <a href="admin.html">Inicio de Sesión</a> para comentar.</p>
