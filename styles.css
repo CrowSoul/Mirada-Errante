@@ -23,8 +23,9 @@ body {
   min-height: 100vh;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
-  background: radial-gradient(circle at top, rgba(167, 139, 250, 0.08), transparent 35%),
-    linear-gradient(180deg, #080812 0%, #06060d 100%);
+  background: url("background.jpg") center/cover fixed no-repeat,
+    radial-gradient(circle at top, rgba(167, 139, 250, 0.08), transparent 35%),
+    linear-gradient(180deg, rgba(8, 8, 18, 0.95) 0%, rgba(6, 6, 13, 0.95) 100%);
   line-height: 1.6;
 }
 
