@@ -174,6 +174,11 @@ function formatDate(timestamp) {
   });
 }
 
+function truncateText(text, maxLength = 120) {
+  if (!text) return '';
+  return text.length <= maxLength ? text : `${text.slice(0, maxLength).trimEnd()}...`;
+}
+
 function renderHome() {
   const postsGrid = document.getElementById('postsGrid');
 
@@ -189,13 +194,14 @@ function renderHome() {
       const buttonHTML = post.buttonEnabled && post.buttonText && post.buttonUrl
         ? `<a href="${post.buttonUrl}" target="_blank" class="btn btn-custom-post">${post.buttonText}</a>`
         : '';
+      const shortExcerpt = truncateText(post.excerpt, 100);
       return `
         <article class="post-card hover-float">
           <img class="post-thumb zoomable-image" src="${imageUrl}" alt="Miniatura ${post.title}" data-title="${post.title}" data-caption="${post.excerpt}" data-post-id="${post.id}" />
           <span class="post-meta">${post.tag}</span>
           <h3>${post.title}</h3>
-          <p>${post.excerpt}</p>
-          <p class="image-hint">Haz clic en la imagen para ver los comentarios y la descripción completa.</p>
+          <p>${shortExcerpt}</p>
+          <p class="image-hint">Haz clic en la imagen para ver la descripción completa y comentarios.</p>
           <p class="post-meta">Comentarios: ${count}</p>
           ${buttonHTML}
         </article>
@@ -337,7 +343,7 @@ function renderAdmin() {
           <h3>Publicaciones</h3>
           <table class="admin-table">
             <thead>
-              <tr><th>Título</th><th>Etiqueta</th><th>Imagen</th><th>Botón</th><th>Acción</th></tr>
+              <tr><th>Título</th><th>Etiqueta</th><th>Imagen</th><th>Editar</th><th>Acción</th></tr>
             </thead>
             <tbody>
               ${posts
@@ -347,7 +353,7 @@ function renderAdmin() {
                     <td>${post.title}</td>
                     <td>${post.tag}</td>
                     <td>${post.image ? '✓' : 'Sin imagen'}</td>
-                    <td><button class="btn btn-primary btn-sm edit-post-button" data-id="${post.id}">${post.buttonEnabled ? '✓ Configurado' : 'Configurar'}</button></td>
+                    <td><button class="btn btn-secondary btn-sm edit-post-button" data-id="${post.id}">Editar</button></td>
                     <td><button class="btn btn-secondary delete-post" data-id="${post.id}">Eliminar</button></td>
                   </tr>
                 `
@@ -355,16 +361,22 @@ function renderAdmin() {
                 .join('')}
             </tbody>
           </table>
-          <div id="postButtonForm" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--surface-2); border-radius: 0.75rem;">
-            <h4>Configurar botón de publicación</h4>
-            <form id="configPostButtonForm">
-              <input type="hidden" name="postId" id="postId">
-              <label>Habilitar botón<input type="checkbox" name="buttonEnabled" id="buttonEnabled"></label>
-              <label>Texto del botón<input type="text" name="buttonText" id="buttonText" placeholder="Ej: Leer más, Visitar, etc."></label>
-              <label>URL del botón<input type="url" name="buttonUrl" id="buttonUrl" placeholder="https://ejemplo.com"></label>
-              <div style="display: flex; gap: 1rem;">
-                <button class="btn btn-primary" type="submit">Guardar</button>
-                <button class="btn btn-secondary" type="button" id="cancelPostButtonForm">Cancelar</button>
+          <div id="editPostFormContainer" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--surface-2); border-radius: 0.75rem;">
+            <h4>Editar publicación</h4>
+            <form id="editPostForm">
+              <input type="hidden" name="postId" id="editPostId">
+              <label>Título<input type="text" name="title" id="editPostTitle" required></label>
+              <label>Etiqueta<input type="text" name="tag" id="editPostTag" required></label>
+              <label>Descripción<textarea name="excerpt" id="editPostExcerpt" required></textarea></label>
+              <label>URL de imagen<input type="text" name="imageUrl" id="editPostImageUrl" placeholder="https://ejemplo.com/imagen.jpg"></label>
+              <label>O subir imagen<input type="file" name="imageFile" id="editPostImageFile" accept="image/*"></label>
+              <h4>Opciones de botón</h4>
+              <label>Habilitar botón<input type="checkbox" name="buttonEnabled" id="editButtonEnabled"></label>
+              <label>Texto del botón<input type="text" name="buttonText" id="editButtonText" placeholder="Ej: Leer más, Visitar, etc."></label>
+              <label>URL del botón<input type="url" name="buttonUrl" id="editButtonUrl" placeholder="https://ejemplo.com"></label>
+              <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-primary" type="submit">Guardar cambios</button>
+                <button class="btn btn-secondary" type="button" id="cancelEditPostForm">Cancelar</button>
               </div>
             </form>
           </div>
@@ -374,7 +386,7 @@ function renderAdmin() {
           <h3>Artículos (Artesanías)</h3>
           <table class="admin-table">
             <thead>
-              <tr><th>Título</th><th>Categoría</th><th>Precio</th><th>Imagen</th><th>Acción</th></tr>
+              <tr><th>Título</th><th>Categoría</th><th>Precio</th><th>Imagen</th><th>Editar</th><th>Acción</th></tr>
             </thead>
             <tbody>
               ${crafts
@@ -385,6 +397,7 @@ function renderAdmin() {
                     <td>${craft.tag}</td>
                     <td>$${craft.price}</td>
                     <td>${craft.image ? '✓' : 'Sin imagen'}</td>
+                    <td><button class="btn btn-secondary btn-sm edit-craft-button" data-id="${craft.id}">Editar</button></td>
                     <td><button class="btn btn-secondary delete-craft" data-id="${craft.id}">Eliminar</button></td>
                   </tr>
                 `
@@ -392,13 +405,29 @@ function renderAdmin() {
                 .join('')}
             </tbody>
           </table>
+          <div id="editCraftFormContainer" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--surface-2); border-radius: 0.75rem;">
+            <h4>Editar artículo</h4>
+            <form id="editCraftForm">
+              <input type="hidden" name="craftId" id="editCraftId">
+              <label>Título<input type="text" name="title" id="editCraftTitle" required></label>
+              <label>Categoría<input type="text" name="tag" id="editCraftTag" required></label>
+              <label>Descripción<textarea name="description" id="editCraftDescription" required></textarea></label>
+              <label>Precio<input type="number" name="price" id="editCraftPrice" step="0.01" min="0" required></label>
+              <label>URL de imagen<input type="text" name="imageUrl" id="editCraftImageUrl" placeholder="https://ejemplo.com/imagen.jpg"></label>
+              <label>O subir imagen<input type="file" name="imageFile" id="editCraftImageFile" accept="image/*"></label>
+              <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-primary" type="submit">Guardar cambios</button>
+                <button class="btn btn-secondary" type="button" id="cancelEditCraftForm">Cancelar</button>
+              </div>
+            </form>
+          </div>
         </div>
 
         <div class="card">
           <h3>Libros</h3>
           <table class="admin-table">
             <thead>
-              <tr><th>Título</th><th>Categoría</th><th>Precio</th><th>Imagen</th><th>Acción</th></tr>
+              <tr><th>Título</th><th>Categoría</th><th>Precio</th><th>Imagen</th><th>Editar</th><th>Acción</th></tr>
             </thead>
             <tbody>
               ${books
@@ -409,6 +438,7 @@ function renderAdmin() {
                     <td>${book.tag}</td>
                     <td>$${book.price}</td>
                     <td>${book.image ? '✓' : 'Sin imagen'}</td>
+                    <td><button class="btn btn-secondary btn-sm edit-book-button" data-id="${book.id}">Editar</button></td>
                     <td><button class="btn btn-secondary delete-book" data-id="${book.id}">Eliminar</button></td>
                   </tr>
                 `
@@ -416,6 +446,22 @@ function renderAdmin() {
                 .join('')}
             </tbody>
           </table>
+          <div id="editBookFormContainer" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--surface-2); border-radius: 0.75rem;">
+            <h4>Editar libro</h4>
+            <form id="editBookForm">
+              <input type="hidden" name="bookId" id="editBookId">
+              <label>Título<input type="text" name="title" id="editBookTitle" required></label>
+              <label>Categoría<input type="text" name="tag" id="editBookTag" required></label>
+              <label>Descripción<textarea name="description" id="editBookDescription" required></textarea></label>
+              <label>Precio<input type="number" name="price" id="editBookPrice" step="0.01" min="0" required></label>
+              <label>URL de imagen<input type="text" name="imageUrl" id="editBookImageUrl" placeholder="https://ejemplo.com/imagen.jpg"></label>
+              <label>O subir imagen<input type="file" name="imageFile" id="editBookImageFile" accept="image/*"></label>
+              <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-primary" type="submit">Guardar cambios</button>
+                <button class="btn btn-secondary" type="button" id="cancelEditBookForm">Cancelar</button>
+              </div>
+            </form>
+          </div>
         </div>
 
         <div class="card">
@@ -619,41 +665,198 @@ function renderAdmin() {
         const postId = button.dataset.id;
         const post = posts.find(p => p.id === postId);
         if (!post) return;
-        
-        document.getElementById('postId').value = postId;
-        document.getElementById('buttonEnabled').checked = post.buttonEnabled || false;
-        document.getElementById('buttonText').value = post.buttonText || '';
-        document.getElementById('buttonUrl').value = post.buttonUrl || '';
-        document.getElementById('postButtonForm').style.display = 'block';
+
+        document.getElementById('editPostId').value = postId;
+        document.getElementById('editPostTitle').value = post.title;
+        document.getElementById('editPostTag').value = post.tag;
+        document.getElementById('editPostExcerpt').value = post.excerpt;
+        document.getElementById('editPostImageUrl').value = post.image && post.image.startsWith('http') ? post.image : '';
+        document.getElementById('editButtonEnabled').checked = post.buttonEnabled || false;
+        document.getElementById('editButtonText').value = post.buttonText || '';
+        document.getElementById('editButtonUrl').value = post.buttonUrl || '';
+        document.getElementById('editPostFormContainer').style.display = 'block';
       });
     });
 
-    document.getElementById('configPostButtonForm').addEventListener('submit', event => {
+    document.getElementById('editPostForm').addEventListener('submit', event => {
       event.preventDefault();
-      const postId = document.getElementById('postId').value;
-      const buttonEnabled = document.getElementById('buttonEnabled').checked;
-      const buttonText = document.getElementById('buttonText').value.trim();
-      const buttonUrl = document.getElementById('buttonUrl').value.trim();
-      
-      if (buttonEnabled && (!buttonText || !buttonUrl)) {
-        alert('Por favor completa el texto y URL del botón.');
-        return;
+      const form = event.target;
+      const postId = form.postId.value;
+      const title = form.title.value.trim();
+      const tag = form.tag.value.trim();
+      const excerpt = form.excerpt.value.trim();
+      const imageUrl = form.imageUrl.value.trim();
+      const imageFile = form.imageFile.files[0];
+      const buttonEnabled = form.buttonEnabled.checked;
+      const buttonText = form.buttonText.value.trim();
+      const buttonUrl = form.buttonUrl.value.trim();
+
+      if (!title || !tag || !excerpt) return;
+
+      const selectedPost = posts.find(post => post.id === postId);
+      if (!selectedPost) return;
+
+      const saveUpdatedPost = imageData => {
+        const updatedPosts = posts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              title,
+              tag,
+              excerpt,
+              image: imageData,
+              buttonEnabled,
+              buttonText,
+              buttonUrl
+            };
+          }
+          return post;
+        });
+        setStorage(storageKeys.posts, updatedPosts);
+        document.getElementById('editPostFormContainer').style.display = 'none';
+        renderAdmin();
+      };
+
+      let imageData = selectedPost.image || 'logo.svg';
+      if (imageUrl) imageData = imageUrl;
+
+      if (imageFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          saveUpdatedPost(e.target.result);
+        };
+        reader.readAsDataURL(imageFile);
+      } else {
+        saveUpdatedPost(imageData);
       }
-      
-      const updatedPosts = posts.map(post => {
-        if (post.id === postId) {
-          return { ...post, buttonEnabled, buttonText, buttonUrl };
-        }
-        return post;
-      });
-      
-      setStorage(storageKeys.posts, updatedPosts);
-      document.getElementById('postButtonForm').style.display = 'none';
-      renderAdmin();
     });
 
-    document.getElementById('cancelPostButtonForm').addEventListener('click', () => {
-      document.getElementById('postButtonForm').style.display = 'none';
+    document.getElementById('cancelEditPostForm').addEventListener('click', () => {
+      document.getElementById('editPostFormContainer').style.display = 'none';
+    });
+
+    document.querySelectorAll('.edit-craft-button').forEach(button => {
+      button.addEventListener('click', () => {
+        const craftId = button.dataset.id;
+        const craft = crafts.find(c => c.id === craftId);
+        if (!craft) return;
+
+        document.getElementById('editCraftId').value = craftId;
+        document.getElementById('editCraftTitle').value = craft.title;
+        document.getElementById('editCraftTag').value = craft.tag;
+        document.getElementById('editCraftDescription').value = craft.description;
+        document.getElementById('editCraftPrice').value = craft.price;
+        document.getElementById('editCraftImageUrl').value = craft.image && craft.image.startsWith('http') ? craft.image : '';
+        document.getElementById('editCraftFormContainer').style.display = 'block';
+      });
+    });
+
+    document.getElementById('editCraftForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const form = event.target;
+      const craftId = form.craftId.value;
+      const title = form.title.value.trim();
+      const tag = form.tag.value.trim();
+      const description = form.description.value.trim();
+      const price = parseFloat(form.price.value);
+      const imageUrl = form.imageUrl.value.trim();
+      const imageFile = form.imageFile.files[0];
+
+      if (!title || !tag || !description || price < 0) return;
+
+      const selectedCraft = crafts.find(craft => craft.id === craftId);
+      if (!selectedCraft) return;
+
+      const saveUpdatedCraft = imageData => {
+        const updatedCrafts = crafts.map(craft => {
+          if (craft.id === craftId) {
+            return { ...craft, title, tag, description, price, image: imageData };
+          }
+          return craft;
+        });
+        setStorage(storageKeys.crafts, updatedCrafts);
+        document.getElementById('editCraftFormContainer').style.display = 'none';
+        renderAdmin();
+      };
+
+      let imageData = selectedCraft.image || 'logo.svg';
+      if (imageUrl) imageData = imageUrl;
+
+      if (imageFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          saveUpdatedCraft(e.target.result);
+        };
+        reader.readAsDataURL(imageFile);
+      } else {
+        saveUpdatedCraft(imageData);
+      }
+    });
+
+    document.getElementById('cancelEditCraftForm').addEventListener('click', () => {
+      document.getElementById('editCraftFormContainer').style.display = 'none';
+    });
+
+    document.querySelectorAll('.edit-book-button').forEach(button => {
+      button.addEventListener('click', () => {
+        const bookId = button.dataset.id;
+        const book = books.find(b => b.id === bookId);
+        if (!book) return;
+
+        document.getElementById('editBookId').value = bookId;
+        document.getElementById('editBookTitle').value = book.title;
+        document.getElementById('editBookTag').value = book.tag;
+        document.getElementById('editBookDescription').value = book.description;
+        document.getElementById('editBookPrice').value = book.price;
+        document.getElementById('editBookImageUrl').value = book.image && book.image.startsWith('http') ? book.image : '';
+        document.getElementById('editBookFormContainer').style.display = 'block';
+      });
+    });
+
+    document.getElementById('editBookForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const form = event.target;
+      const bookId = form.bookId.value;
+      const title = form.title.value.trim();
+      const tag = form.tag.value.trim();
+      const description = form.description.value.trim();
+      const price = parseFloat(form.price.value);
+      const imageUrl = form.imageUrl.value.trim();
+      const imageFile = form.imageFile.files[0];
+
+      if (!title || !tag || !description || price < 0) return;
+
+      const selectedBook = books.find(book => book.id === bookId);
+      if (!selectedBook) return;
+
+      const saveUpdatedBook = imageData => {
+        const updatedBooks = books.map(book => {
+          if (book.id === bookId) {
+            return { ...book, title, tag, description, price, image: imageData };
+          }
+          return book;
+        });
+        setStorage(storageKeys.books, updatedBooks);
+        document.getElementById('editBookFormContainer').style.display = 'none';
+        renderAdmin();
+      };
+
+      let imageData = selectedBook.image || 'logo.svg';
+      if (imageUrl) imageData = imageUrl;
+
+      if (imageFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          saveUpdatedBook(e.target.result);
+        };
+        reader.readAsDataURL(imageFile);
+      } else {
+        saveUpdatedBook(imageData);
+      }
+    });
+
+    document.getElementById('cancelEditBookForm').addEventListener('click', () => {
+      document.getElementById('editBookFormContainer').style.display = 'none';
     });
 
     document.querySelectorAll('.delete-craft').forEach(button => {
