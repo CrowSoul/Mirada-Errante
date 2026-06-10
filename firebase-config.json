@@ -1,9 +1,9 @@
 {
   "apiKey": "YOUR_API_KEY",
-  "authDomain": "YOUR_PROJECT_ID.firebaseapp.com",
-  "databaseURL": "https://YOUR_PROJECT_ID.firebaseio.com",
+  "authDomain": "https://drive.google.com/drive/folders/1Xkks0sHztiUNH64nvQGGLzqSP5W4GKqw?usp=sharing",
+  "databaseURL": "https://drive.google.com/drive/folders/1Xkks0sHztiUNH64nvQGGLzqSP5W4GKqw?usp=sharing",
   "projectId": "YOUR_PROJECT_ID",
-  "storageBucket": "YOUR_PROJECT_ID.appspot.com",
+  "storageBucket": "https://drive.google.com/drive/folders/1Xkks0sHztiUNH64nvQGGLzqSP5W4GKqw?usp=sharing",
   "messagingSenderId": "SENDER_ID",
   "appId": "APP_ID",
   "measurementId": "G-MEASUREMENT_ID"

@@ -125,6 +125,7 @@ function getStorage(key, fallback) {
 // --- Firebase realtime sync helpers ---
 let firebaseAppInstance = null;
 let firebaseDB = null;
+let firebaseStorage = null;
 const firebaseRootPath = 'miradaErranteData';
 let firebaseInitialized = false;
 
@@ -156,12 +157,20 @@ async function initFirebase(config) {
     if (typeof firebase === 'undefined') {
       await loadScript('https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js');
     }
     if (!firebase.apps || !firebase.apps.length) {
       firebase.initializeApp(config);
     }
     firebaseAppInstance = firebase.app();
     firebaseDB = firebase.database();
+    // initialize storage if available
+    try {
+      firebaseStorage = firebase.storage();
+    } catch (e) {
+      console.warn('Firebase Storage init failed', e);
+      firebaseStorage = null;
+    }
     firebaseInitialized = true;
     setupRemoteListeners();
     const statusEl = document.getElementById('firebaseStatus');
@@ -171,6 +180,52 @@ async function initFirebase(config) {
     const statusEl = document.getElementById('firebaseStatus');
     if (statusEl) statusEl.textContent = 'Error al conectar';
   }
+}
+
+function uploadFileToFirebase(file, pathHint) {
+  return new Promise((resolve, reject) => {
+    if (!firebaseInitialized || !firebaseStorage) {
+      return reject(new Error('Firebase Storage no inicializado'));
+    }
+    try {
+      const fileName = `${Date.now()}_${(file && file.name) ? file.name.replace(/[^a-zA-Z0-9._-]/g, '_') : 'upload'}`;
+      const path = pathHint ? `${pathHint.replace(/(^|\/)\/+/, '')}` : `images/${fileName}`;
+      const storageRef = firebaseStorage.ref().child(path);
+      const uploadTask = storageRef.put(file);
+      uploadTask.then(snapshot => {
+        snapshot.ref.getDownloadURL().then(url => resolve(url)).catch(reject);
+      }).catch(reject);
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+// Google Drive upload helper
+const DRIVE_SERVER_URL = typeof process !== 'undefined' ? (process.env.DRIVE_SERVER_URL || 'http://localhost:3000') : 'http://localhost:3000';
+
+function uploadFileToDrive(file) {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch(`${DRIVE_SERVER_URL}/upload`, {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          resolve(data);
+        } else {
+          reject(new Error(data.error || 'Upload failed'));
+        }
+      })
+      .catch(reject);
+  });
 }
 
 function setupRemoteListeners() {
@@ -590,6 +645,7 @@ function renderAdmin() {
             <div style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:center;">
               <button class="btn btn-primary" id="saveFirebaseConfig">Conectar Firebase</button>
               <button class="btn btn-secondary" id="disconnectFirebase">Desconectar</button>
+              <button class="btn btn-primary" id="testUploadStorage" title="Subir archivo de prueba">Probar subida a Storage</button>
               <span id="firebaseStatus" style="margin-left:0.5rem; color: var(--muted);"></span>
             </div>
           </div>
@@ -722,21 +778,35 @@ function renderAdmin() {
 
       let imageData = imageUrl || 'logo.svg';
 
-      if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          imageData = e.target.result;
-          const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData, buttonEnabled: false, buttonText: '', buttonUrl: '' }, ...posts];
-          setStorage(storageKeys.posts, updatedPosts);
-          renderAdmin();
-          form.reset();
-        };
-        reader.readAsDataURL(imageFile);
-      } else {
-        const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: imageData, buttonEnabled: false, buttonText: '', buttonUrl: '' }, ...posts];
+      const savePost = (img) => {
+        const updatedPosts = [{ id: `post-${Date.now()}`, title, tag, excerpt, image: img, buttonEnabled: false, buttonText: '', buttonUrl: '' }, ...posts];
         setStorage(storageKeys.posts, updatedPosts);
         renderAdmin();
         form.reset();
+      };
+
+      if (imageFile) {
+        if (firebaseInitialized && firebaseStorage) {
+          uploadFileToFirebase(imageFile, `images/posts/${Date.now()}_${imageFile.name}`).then(url => {
+            savePost(url);
+          }).catch(err => {
+            console.error('Upload error', err);
+            // fallback to FileReader
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              savePost(e.target.result);
+            };
+            reader.readAsDataURL(imageFile);
+          });
+        } else {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            savePost(e.target.result);
+          };
+          reader.readAsDataURL(imageFile);
+        }
+      } else {
+        savePost(imageData);
       }
     });
 
@@ -754,21 +824,34 @@ function renderAdmin() {
 
       let imageData = imageUrl || 'logo.svg';
 
-      if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          imageData = e.target.result;
-          const updatedCrafts = [{ id: `craft-${Date.now()}`, title, tag, description, price, image: imageData }, ...crafts];
-          setStorage(storageKeys.crafts, updatedCrafts);
-          renderAdmin();
-          form.reset();
-        };
-        reader.readAsDataURL(imageFile);
-      } else {
-        const updatedCrafts = [{ id: `craft-${Date.now()}`, title, tag, description, price, image: imageData }, ...crafts];
+      const saveCraft = (img) => {
+        const updatedCrafts = [{ id: `craft-${Date.now()}`, title, tag, description, price, image: img }, ...crafts];
         setStorage(storageKeys.crafts, updatedCrafts);
         renderAdmin();
         form.reset();
+      };
+
+      if (imageFile) {
+        if (firebaseInitialized && firebaseStorage) {
+          uploadFileToFirebase(imageFile, `images/crafts/${Date.now()}_${imageFile.name}`).then(url => {
+            saveCraft(url);
+          }).catch(err => {
+            console.error('Upload error', err);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              saveCraft(e.target.result);
+            };
+            reader.readAsDataURL(imageFile);
+          });
+        } else {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            saveCraft(e.target.result);
+          };
+          reader.readAsDataURL(imageFile);
+        }
+      } else {
+        saveCraft(imageData);
       }
     });
 
@@ -786,21 +869,34 @@ function renderAdmin() {
 
       let imageData = imageUrl || 'logo.svg';
 
-      if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          imageData = e.target.result;
-          const updatedBooks = [{ id: `book-${Date.now()}`, title, tag, description, price, image: imageData }, ...books];
-          setStorage(storageKeys.books, updatedBooks);
-          renderAdmin();
-          form.reset();
-        };
-        reader.readAsDataURL(imageFile);
-      } else {
-        const updatedBooks = [{ id: `book-${Date.now()}`, title, tag, description, price, image: imageData }, ...books];
+      const saveBook = (img) => {
+        const updatedBooks = [{ id: `book-${Date.now()}`, title, tag, description, price, image: img }, ...books];
         setStorage(storageKeys.books, updatedBooks);
         renderAdmin();
         form.reset();
+      };
+
+      if (imageFile) {
+        if (firebaseInitialized && firebaseStorage) {
+          uploadFileToFirebase(imageFile, `images/books/${Date.now()}_${imageFile.name}`).then(url => {
+            saveBook(url);
+          }).catch(err => {
+            console.error('Upload error', err);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              saveBook(e.target.result);
+            };
+            reader.readAsDataURL(imageFile);
+          });
+        } else {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            saveBook(e.target.result);
+          };
+          reader.readAsDataURL(imageFile);
+        }
+      } else {
+        saveBook(imageData);
       }
     });
 
@@ -876,11 +972,24 @@ function renderAdmin() {
       if (imageUrl) imageData = imageUrl;
 
       if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          saveUpdatedPost(e.target.result);
-        };
-        reader.readAsDataURL(imageFile);
+        if (firebaseInitialized && firebaseStorage) {
+          uploadFileToFirebase(imageFile, `images/posts/${Date.now()}_${imageFile.name}`).then(url => {
+            saveUpdatedPost(url);
+          }).catch(err => {
+            console.error('Upload error', err);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              saveUpdatedPost(e.target.result);
+            };
+            reader.readAsDataURL(imageFile);
+          });
+        } else {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            saveUpdatedPost(e.target.result);
+          };
+          reader.readAsDataURL(imageFile);
+        }
       } else {
         saveUpdatedPost(imageData);
       }
@@ -938,11 +1047,24 @@ function renderAdmin() {
       if (imageUrl) imageData = imageUrl;
 
       if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          saveUpdatedCraft(e.target.result);
-        };
-        reader.readAsDataURL(imageFile);
+        if (firebaseInitialized && firebaseStorage) {
+          uploadFileToFirebase(imageFile, `images/crafts/${Date.now()}_${imageFile.name}`).then(url => {
+            saveUpdatedCraft(url);
+          }).catch(err => {
+            console.error('Upload error', err);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              saveUpdatedCraft(e.target.result);
+            };
+            reader.readAsDataURL(imageFile);
+          });
+        } else {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            saveUpdatedCraft(e.target.result);
+          };
+          reader.readAsDataURL(imageFile);
+        }
       } else {
         saveUpdatedCraft(imageData);
       }
@@ -1000,11 +1122,24 @@ function renderAdmin() {
       if (imageUrl) imageData = imageUrl;
 
       if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          saveUpdatedBook(e.target.result);
-        };
-        reader.readAsDataURL(imageFile);
+        if (firebaseInitialized && firebaseStorage) {
+          uploadFileToFirebase(imageFile, `images/books/${Date.now()}_${imageFile.name}`).then(url => {
+            saveUpdatedBook(url);
+          }).catch(err => {
+            console.error('Upload error', err);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              saveUpdatedBook(e.target.result);
+            };
+            reader.readAsDataURL(imageFile);
+          });
+        } else {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            saveUpdatedBook(e.target.result);
+          };
+          reader.readAsDataURL(imageFile);
+        }
       } else {
         saveUpdatedBook(imageData);
       }
@@ -1142,6 +1277,24 @@ function renderAdmin() {
         setStorage('firebaseConfig', null);
         const statusEl = document.getElementById('firebaseStatus');
         if (statusEl) statusEl.textContent = 'Desconectado';
+      });
+    }
+
+    const testUploadBtn = document.getElementById('testUploadStorage');
+    if (testUploadBtn) {
+      testUploadBtn.addEventListener('click', async () => {
+        if (!firebaseInitialized || !firebaseStorage) {
+          return alert('Firebase Storage no está conectado. Conecta Firebase primero.');
+        }
+        try {
+          const content = `Prueba de subida desde Mirada Errante - ${new Date().toISOString()}`;
+          const file = new File([content], `prueba-${Date.now()}.txt`, { type: 'text/plain' });
+          const url = await uploadFileToFirebase(file, `tests/prueba-${Date.now()}.txt`);
+          alert('Archivo subido correctamente. URL:\n' + url);
+        } catch (e) {
+          console.error('Test upload failed', e);
+          alert('Error al subir archivo de prueba. Revisa la consola para más detalles.');
+        }
       });
     }
   }
