@@ -316,35 +316,12 @@ function renderAdmin() {
   const comments = getComments();
   const crafts = getCrafts();
   const books = getBooks();
-
-  const userPanel = currentUser
-    ? `
-      <div class="auth-card">
-        <h3>Usuario conectado</h3>
-        <p class="auth-note">Has iniciado sesión como <strong>${currentUser.username}</strong>. Puedes publicar comentarios en el sitio o cerrar sesión.</p>
-        <button class="btn btn-secondary" id="logoutUserBtn">Cerrar sesión de usuario</button>
-      </div>
-    `
-    : `
-      <div class="auth-card">
-        <h3>Ingresar usuario</h3>
-        <p class="auth-note">Si ya tienes una cuenta, inicia sesión para usar el sitio y comentar.</p>
-        <form id="loginUserForm">
-          <label>Usuario<input type="text" name="username" required></label>
-          <label>Contraseña<input type="password" name="password" required></label>
-          <button class="btn btn-primary" type="submit">Ingresar</button>
-        </form>
-      </div>
-      <div class="auth-card">
-        <h3>Crear nuevo usuario</h3>
-        <p class="auth-note">Regístrate ahora para acceder a contenido y comentar con tu perfil personal.</p>
-        <form id="registerUserForm">
-          <label>Usuario<input type="text" name="username" required></label>
-          <label>Contraseña<input type="password" name="password" required></label>
-          <button class="btn btn-secondary" type="submit">Registrar</button>
-        </form>
-      </div>
-    `;
+  const userPanel = `
+    <div class="auth-card">
+      <h3>Acceso de usuario</h3>
+      <p class="auth-note">Registro deshabilitado. Los comentarios solo pueden ser publicados por el administrador.</p>
+    </div>
+  `;
 
   const adminPanel = adminAuth
     ? `
@@ -1264,7 +1241,7 @@ function createImageModal() {
   });
 }
 
-function attachCommentEventListeners(currentUser, postId) {
+function attachCommentEventListeners(isAdmin, postId) {
   const overlay = document.getElementById('imageModalOverlay');
   const commentsEl = overlay.querySelector('.image-modal-comments');
   const formEl = overlay.querySelector('.image-modal-comment-form');
@@ -1302,7 +1279,7 @@ function attachCommentEventListeners(currentUser, postId) {
                     <div class="comment-card" data-comment-id="${comment.id}">
                       <p>${comment.text}</p>
                       <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
-                      ${currentUser && currentUser.username === comment.username ? `
+                      ${isAdmin ? `
                         <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
                           <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
                           <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
@@ -1315,7 +1292,7 @@ function attachCommentEventListeners(currentUser, postId) {
             : '<p>No hay comentarios todavía.</p>'
         }
       `;
-      attachCommentEventListeners(currentUser, postId);
+      attachCommentEventListeners(isAdmin, postId);
     });
   });
 
@@ -1349,7 +1326,7 @@ function attachCommentEventListeners(currentUser, postId) {
                     <div class="comment-card" data-comment-id="${comment.id}">
                       <p>${comment.text}</p>
                       <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
-                      ${currentUser && currentUser.username === comment.username ? `
+                      ${isAdmin ? `
                         <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
                           <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
                           <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
@@ -1366,7 +1343,7 @@ function attachCommentEventListeners(currentUser, postId) {
       document.getElementById('editCommentForm').style.display = 'none';
       document.getElementById('modalCommentForm').style.display = 'block';
       document.getElementById('modalCommentForm').reset();
-      attachCommentEventListeners(currentUser, postId);
+      attachCommentEventListeners(isAdmin, postId);
     });
   }
 
@@ -1392,6 +1369,7 @@ function attachImageModalListeners() {
     img.dataset.modalAttached = 'true';
     img.style.cursor = 'zoom-in';
     img.addEventListener('click', () => {
+      const adminAuth = isAdminAuthenticated();
       const currentUser = getCurrentUser();
       const postId = img.dataset.postId;
       modalImg.src = img.src;
@@ -1412,7 +1390,7 @@ function attachImageModalListeners() {
                       <div class="comment-card" data-comment-id="${comment.id}">
                         <p>${comment.text}</p>
                         <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
-                        ${currentUser && currentUser.username === comment.username ? `
+                        ${adminAuth ? `
                           <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
                             <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
                             <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
@@ -1425,8 +1403,7 @@ function attachImageModalListeners() {
               : '<p>No hay comentarios todavía.</p>'
           }
         `;
-
-        if (currentUser) {
+        if (adminAuth) {
           formEl.innerHTML = `
             <form id="modalCommentForm" data-post-id="${postId}">
               <label>Tu comentario<textarea name="comment" required placeholder="Escribe tu reflexión..."></textarea></label>
@@ -1456,7 +1433,7 @@ function attachImageModalListeners() {
             comments.unshift({
               id: `comment-${Date.now()}`,
               postId,
-              username: currentUser.username,
+              username: adminCredentials.username,
               text,
               createdAt: Date.now()
             });
@@ -1471,7 +1448,7 @@ function attachImageModalListeners() {
                     <div class="comment-card" data-comment-id="${comment.id}">
                       <p>${comment.text}</p>
                       <span class="comment-meta">${comment.username} · ${formatDate(comment.createdAt)}</span>
-                      ${currentUser && currentUser.username === comment.username ? `
+                      ${adminAuth ? `
                         <div class="comment-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
                           <button class="btn btn-secondary btn-sm edit-comment-btn" data-comment-id="${comment.id}">Editar</button>
                           <button class="btn btn-secondary btn-sm delete-comment-btn" data-comment-id="${comment.id}">Eliminar</button>
@@ -1482,14 +1459,14 @@ function attachImageModalListeners() {
                 )
                 .join('')}
             `;
-            attachCommentEventListeners(currentUser, postId);
+            attachCommentEventListeners(adminAuth, postId);
             modalForm.reset();
           });
 
-          attachCommentEventListeners(currentUser, postId);
+          attachCommentEventListeners(adminAuth, postId);
         } else {
           formEl.innerHTML = `
-            <p class="auth-note">Inicia sesión en <a href="admin.html">Inicio de Sesión</a> para comentar.</p>
+            <p class="auth-note">Los comentarios están restringidos al administrador. Visita <a href="admin.html">Inicio de Sesión</a> para iniciar sesión como administrador.</p>
           `;
         }
       } else {
