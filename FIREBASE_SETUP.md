@@ -31,11 +31,11 @@ Reglas de ejemplo (modo de prueba):
 4) Conectar la web
 - Opciones:
   a) Pegar el objeto JSON en el panel admin: abre `admin.html`, ve a la sección "Sincronización en tiempo real (Firebase)", pega el objeto JSON EXACTO que Firebase te da (el bloque de configuración) y pulsa "Conectar Firebase".
-  b) (opcional) Crear un archivo local `firebase-config.json` con el mismo objeto y, durante desarrollo, usarlo para inicializar la app. No recomendamos subir credenciales sensibles al repositorio público.
+  b) (recomendado para sincronización entre dispositivos) Crear un archivo `firebase-config.json` en la raíz del sitio con el mismo objeto de configuración. Al incluir `firebase-config-loader.js` en las páginas, la app cargará ese JSON automáticamente en cualquier navegador.
 
 5) Verificación
 - Tras conectar, el estado mostrará "Conectado".
-- Abre la app en otro navegador/dispositivo y conecta con la misma configuración; las escrituras deberían sincronizarse en tiempo real.
+- Abre la app en otro navegador/dispositivo; si el archivo `firebase-config.json` está presente en el sitio, la sincronización remota se activará automáticamente.
 
 Consejos para GitHub
 - Incluye `firebase.example.json` con valores de ejemplo (ya está en el repo).
