@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "sound-temple-499808-r3",
+  "private_key_id": "8a469cc500c702cd10ac06396b13dd420e42a916",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCozE4gJxht88Es\nKx1hrZ/XXh2vce/Inv4m0q8l2Nk99YcfQIpo6OdRVR3PfGlhDR97DW3P9Topr1K6\njP4Fai1D5gcmNoGVNuAHrJBpIIFOlOUJJHdTosm64FU+VreDtJNwGwkRVkzI/5H4\ntOj3FlZbU4vf5VfqI8m2GYjVfL4dBhn4pzDqiGK4d4DVgDfQAqLLpDWcKdp/Vzfv\nQZQ/kJmF1A5fYsT+5xoMPpuH3Iq8us3Ep7R7YF6Q+TNX3aBGD1tyZ2nse6fpP7b8\n7Qnkpq/L5hiM2kSsxQLLByCgHF/ao0E71UGHIr90T/GaLEM682qGYanbhZ1mC7bU\nbyumRu5FAgMBAAECggEACr8PDj75mtkU6EdKaeiQL47qBucTDqEIqddp7S0+uhIX\n6yZvFA9tLUwPnMuyjco0bIobU/esdJuZLGVDhXwQAQLzsObGyIV4187lrBEKCm2y\nSIBjfxXzD+GuVkyrsZ0yccWsMHK1FWrSk+njQa/QtE8VAvO/7W51LhG2w24F+yTz\nfIE5CTfOM94/I75H6Lgrajx/0pREGAlmEMK4Bdac6pt/2f0TxD/B0SPAGRglefGU\nQAu3zUke3kxCZLtx4Q0pxMqr7yTCNA3iAZ9Crjvd/xqUSdQhrjMoB+GSymMB4cEd\nTTvVUcsaNBKfQ4HvyYGp5y8O2ytCu2BkRHb7AFue9QKBgQDVm0B4mJBWGoLIxjXo\nXAYXUWpYn7nEs6R6S3wi3DBCrxeIFq/BKXfpezTNIeL9+EuPBu1XgW2a42rTz7S1\n4EI30BTFP5v9xMvMYW1x3qTiFZKhyxSRV6H+yzMTkjneGHXVeAxUzy9Yk49nLLfv\n3xR6khPYBANnHlrGkq36C2f/IwKBgQDKTHbYE2pZ58f9VPcsUPJ0IxWjh/ULXfEn\nkoCdOVQaeIyOdJLWmAuvj31y4mQSHCvIKXObpEImeiwjyqOsS3oNkaXRlESi33ZY\ntiGY9FK9OsJvD/Sl4AmezLOiS9jLyiIwc9l0/nGsgcMtyqnFAUKtjjBIxx6Ivrxa\nKsWKvDsndwKBgH8ex719PdigKlkF7Kr9qPpTj3ByjgGLz0Sgi53LYEUvIlfw+GOC\nJESk+AVkN0xhacYSn0jGU84rrTWklKzwazf/83x3oIPjjE1zZciwcXvCzuLOksz0\nVAnoL9tj2GBeOjHyIZSPQGP8XQlPyZ9NKUjQilKyALxriiZGwJbgFuH1AoGALXyj\n/FHhR/Xl8gB4024gFh0NcIfRgYzN/KfkY3XQg2M3t5BetAHcHs2U15AwECJldcxc\nQlLczOoLosCdrNAL0aE+N7Gu/TBh2/CX/VxyfjoIHhDoYaPOhfZhLc0AIlKA/YQP\nEU9lH/TNfi5jnfh6lauzD6o2I2k/0MZtRJSueGECgYAo9S0pwlwKZHJ4Qx4e7y66\nEFmWsXqIBD+KNi4X+q3h9vJjDVLm9BkENN3bMk+pttHDtV5/fXWuMdzcrS4icIn9\ngZjS0k2VjG4OyCi7Z5mnh7IIGXB/RQyAzfrRygJpeUDFKcVJVZBScdUatemnuyTs\nBMnqW5xkv1k+0pKuLzTGSA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "sync-to-drive-sa@sound-temple-499808-r3.iam.gserviceaccount.com",
+  "client_id": "110813671901789928864",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sync-to-drive-sa%40sound-temple-499808-r3.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
